@@ -397,6 +397,15 @@ fi
 if [ -n "$SENSOR" ]; then
     logger -s -p daemon.info -t hisilicon "Manualy set SENSOR as ${SENSOR}"
 else
+    # An older build stored a failed probe as sensor=unknown. The branch
+    # below would read that back on every boot from then on and never
+    # look again, so clear a stale one first -- otherwise a camera already
+    # latched by the firmware it is upgrading FROM stays dark forever, and
+    # the guard further down only helps cameras that were never latched.
+    if [ "$(fw_printenv -n sensor 2>/dev/null)" = "unknown" ]; then
+    	fw_setenv sensor
+    fi
+
     if fw_printenv -n sensor >/dev/null; then
         SENSOR_ENV=$(fw_printenv -n sensor)
         export SENSOR=${SENSOR_ENV}
